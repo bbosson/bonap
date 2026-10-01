@@ -96,6 +96,12 @@ test('readIngredient : quantité et unité lues dans la note libre', () => {
   assert.deepEqual(readIngredient({ food: 'Beurre', quantity: '30', unit: 'g' }), { quantity: 30, unit: 'g', label: 'Beurre' })
 })
 
+test('readIngredient : quantité Mealie reprise quand la note n\'en contient pas', () => {
+  assert.deepEqual(readIngredient({ quantity: '4', unit: '', note: 'Saucisse diot' }), { quantity: 4, unit: '', label: 'Saucisse diot' })
+  assert.deepEqual(readIngredient({ quantity: '', unit: '', note: 'sel' }), { quantity: null, unit: '', label: 'sel' })
+  assert.deepEqual(readIngredient({ quantity: '1', unit: 'kg', note: '200 g de farine' }), { quantity: 200, unit: 'g', label: 'farine' })
+})
+
 test('quantityKind : masse, volume, pièce, vague', () => {
   const kindOf = (note) => quantityKind(readIngredient({ note }))
   assert.equal(kindOf('1,5 kg de pommes de terre'), 'mass')

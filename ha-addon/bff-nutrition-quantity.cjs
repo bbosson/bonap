@@ -62,14 +62,18 @@ function parseNoteLine(note) {
   return { quantity: parseQuantity(match[1]), unit: match[2] || '', label: match[3].trim() }
 }
 
+/**
+ * Quantité et unité d'un ingrédient. Sans aliment structuré, celles écrites en
+ * tête de note (« 200 g de farine ») priment ; à défaut on reprend les champs
+ * quantité et unité de Mealie (« 4 » + note « Saucisse diot »).
+ */
 function readIngredient(ingredient) {
+  const quantity = parseQuantity(ingredient?.quantity)
+  const unit = String(ingredient?.unit ?? '').trim()
   const food = String(ingredient?.food ?? '').trim()
-  if (food) {
-    return { quantity: parseQuantity(ingredient.quantity), unit: String(ingredient.unit ?? '').trim(), label: food }
-  }
+  if (food) return { quantity, unit, label: food }
   const parsed = parseNoteLine(ingredient?.note)
-  if (parsed.quantity !== null || !String(ingredient?.unit ?? '').trim()) return parsed
-  return { ...parsed, quantity: parseQuantity(ingredient.quantity), unit: String(ingredient.unit).trim() }
+  return parsed.quantity !== null ? parsed : { ...parsed, quantity, unit }
 }
 
 function canonicalUnit(unit) {
