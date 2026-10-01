@@ -1,6 +1,6 @@
 # Correspondance nutritionnelle CIQUAL — conception de la feature
 
-Statut : conception validée (2026-09-30) · Pas encore implémentée
+Statut : conception validée (2026-09-30) · Implémentée (2026-10-01, voir §13)
 
 ## 1. Contexte
 
@@ -233,3 +233,28 @@ Ces repères cadrent l'implémentation, sans la figer.
 | Couverture | Enregistrée avec la nutrition de la recette ; lue par `balancedMealPlanner` pour écarter les recettes non fiables. |
 | Feature flag | Nouveau drapeau dans `FeatureFlags` (`useFeatureFlags.ts`), combiné à `llmConfigService.isConfigured()`. |
 | Tests | Tests BFF (`npm run test:bff`) pour la validation des fiches et la classification ; réponses IA simulées côté front. |
+
+## 13. Implémentation
+
+| Élément | Emplacement |
+|---|---|
+| Normalisation des noms (clé de fiche) | `ha-addon/bff-nutrition-text.cjs` |
+| Lecture des quantités et conversion en grammes | `ha-addon/bff-nutrition-quantity.cjs` |
+| Dictionnaire : fiches initiales, validation, stockage | `ha-addon/bff-nutrition-foods.cjs` (`/data/bonap-nutrition-foods.json`, `BONAP_NUTRITION_FOODS_FILE` pour le surcharger) |
+| Classification, couverture, estimation par portion | `ha-addon/bff-nutrition-classify.cjs` |
+| Routes | `GET/POST /nutrition/foods`, `POST /nutrition/classify`, `POST /nutrition-estimate`, `GET /ciqual/search` |
+| IA (prompts 1 et 2, lecture des réponses) | `src/infrastructure/nutrition/ciqualPrompts.ts`, `LlmCiqualMatcher.ts` (port `ICiqualAiMatcher`) |
+| Orchestration (garde-fous IA, lots de 10, poids de pièce) | `src/application/nutrition/usecases/ClassifyIngredientsUseCase.ts` |
+| Lancement global | `CompleteAllRecipesNutritionUseCase.ts` · page `/nutrition/ciqual` |
+| Page recette | `/recipes/:slug/nutrition` (`NutritionMappingPage`) |
+| Couverture, planification | `src/shared/utils/nutritionCoverage.ts`, `balancedMealPlanner.ts` |
+
+Choix faits pendant l'implémentation :
+
+- **Nutrition par portion** : enregistrée par portion avec `extras.nutritionPerServing = "true"` et `extras.nutritionCoverage`. Les nutritions antérieures (sans ce marqueur) sont lues comme des totaux de recette et restent divisées par les portions.
+- **Fiches initiales** : jamais écrites dans le fichier ; elles servent de valeurs par défaut tant qu'aucune fiche n'existe pour la clé.
+- **Fiches déjà résolues** (automatique, proposée, négligeable) : reprises telles quelles, l'IA n'est appelée que pour les fiches manquantes ou « à vérifier ».
+- **Quantités** : une ligne sans quantité ou avec une unité vague (pincée, filet, brin…) est négligeable. Une pièce sans poids connu, sans IA, est exclue et signalée « poids d'une pièce à saisir ». Dans la couverture, un ingrédient exclu de poids inconnu compte pour le poids moyen des ingrédients pesés.
+- **Aucun ingrédient estimé** : la nutrition existante est conservée (rien n'est enregistré).
+- **Énergie absente de CIQUAL** (les pommes, par exemple) : recalculée à partir des macronutriments avec les coefficients du règlement UE n° 1169/2011 (protéines et glucides 4 kcal/g, lipides 9, fibres 2).
+
