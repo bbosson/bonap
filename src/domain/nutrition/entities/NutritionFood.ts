@@ -38,6 +38,7 @@ export type NutritionFoods = Record<string, NutritionFood>
 export interface NutritionIngredientInput {
   quantity: string
   unit: string
+  unitAbbreviation?: string
   food: string
   note: string
 }

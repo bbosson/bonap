@@ -1024,6 +1024,7 @@ function readIngredientsBody(body) {
     .map((ingredient) => ({
       quantity: sanitizeIngredientText(ingredient.quantity),
       unit: sanitizeIngredientText(ingredient.unit),
+      unitAbbreviation: sanitizeIngredientText(ingredient.unitAbbreviation),
       food: sanitizeIngredientText(ingredient.food),
       note: sanitizeIngredientText(ingredient.note),
     }))

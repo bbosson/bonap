@@ -7,7 +7,7 @@ const os = require('os')
 const path = require('path')
 
 const { normalizeFoodKey, detectPrecisions } = require('./bff-nutrition-text.cjs')
-const { readIngredient, quantityKind, gramsFor } = require('./bff-nutrition-quantity.cjs')
+const { classifyUnit, readIngredient, quantityKind, gramsFor } = require('./bff-nutrition-quantity.cjs')
 const { createFoodStore, mergeFoodEntry, validateFoodPatch, MAX_ENTRIES } = require('./bff-nutrition-foods.cjs')
 const {
   buildCiqualIndex,
@@ -90,16 +90,16 @@ test('detectPrecisions : précisions explicites conservées', () => {
 })
 
 test('readIngredient : quantité et unité lues dans la note libre', () => {
-  assert.deepEqual(readIngredient({ note: '200 g de farine' }), { quantity: 200, unit: 'g', label: 'farine' })
-  assert.deepEqual(readIngredient({ note: '1 chou-fleur' }), { quantity: 1, unit: '', label: 'chou-fleur' })
-  assert.deepEqual(readIngredient({ note: '1/2 citron' }), { quantity: 0.5, unit: '', label: 'citron' })
-  assert.deepEqual(readIngredient({ food: 'Beurre', quantity: '30', unit: 'g' }), { quantity: 30, unit: 'g', label: 'Beurre' })
+  assert.deepEqual(readIngredient({ note: '200 g de farine' }), { quantity: 200, unit: 'g', unitAbbreviation: '', label: 'farine' })
+  assert.deepEqual(readIngredient({ note: '1 chou-fleur' }), { quantity: 1, unit: '', unitAbbreviation: '', label: 'chou-fleur' })
+  assert.deepEqual(readIngredient({ note: '1/2 citron' }), { quantity: 0.5, unit: '', unitAbbreviation: '', label: 'citron' })
+  assert.deepEqual(readIngredient({ food: 'Beurre', quantity: '30', unit: 'g' }), { quantity: 30, unit: 'g', unitAbbreviation: '', label: 'Beurre' })
 })
 
 test('readIngredient : quantité Mealie reprise quand la note n\'en contient pas', () => {
-  assert.deepEqual(readIngredient({ quantity: '4', unit: '', note: 'Saucisse diot' }), { quantity: 4, unit: '', label: 'Saucisse diot' })
-  assert.deepEqual(readIngredient({ quantity: '', unit: '', note: 'sel' }), { quantity: null, unit: '', label: 'sel' })
-  assert.deepEqual(readIngredient({ quantity: '1', unit: 'kg', note: '200 g de farine' }), { quantity: 200, unit: 'g', label: 'farine' })
+  assert.deepEqual(readIngredient({ quantity: '4', unit: '', note: 'Saucisse diot' }), { quantity: 4, unit: '', unitAbbreviation: '', label: 'Saucisse diot' })
+  assert.deepEqual(readIngredient({ quantity: '', unit: '', note: 'sel' }), { quantity: null, unit: '', unitAbbreviation: '', label: 'sel' })
+  assert.deepEqual(readIngredient({ quantity: '1', unit: 'kg', note: '200 g de farine' }), { quantity: 200, unit: 'g', unitAbbreviation: '', label: 'farine' })
 })
 
 test('quantityKind : masse, volume, pièce, vague', () => {
@@ -110,6 +110,28 @@ test('quantityKind : masse, volume, pièce, vague', () => {
   assert.equal(kindOf('1 pincée de sel'), 'vague')
   assert.equal(kindOf('1 filet d\'huile'), 'vague')
   assert.equal(kindOf('sel'), 'vague')
+})
+
+test('classifyUnit : unités Mealie anglo-saxonnes et once liquide', () => {
+  assert.deepEqual(classifyUnit('mililitre'), { kind: 'volume', factor: 1 })
+  assert.deepEqual(classifyUnit('once'), { kind: 'mass', factor: 28.3495 })
+  assert.deepEqual(classifyUnit('livre'), { kind: 'mass', factor: 453.592 })
+  assert.deepEqual(classifyUnit('once liquide'), { kind: 'volume', factor: 29.5735 })
+  assert.deepEqual(classifyUnit('pinte'), { kind: 'volume', factor: 473.176 })
+  assert.deepEqual(classifyUnit('quart'), { kind: 'volume', factor: 946.353 })
+  assert.deepEqual(classifyUnit('gallon'), { kind: 'volume', factor: 3785.41 })
+  assert.equal(classifyUnit('tête').kind, 'piece')
+  assert.equal(classifyUnit('paquet').kind, 'unknown')
+})
+
+test('classifyUnit : abréviation Mealie en secours d\'un nom inconnu', () => {
+  assert.deepEqual(classifyUnit('Fluid Ounce US', 'fl oz'), { kind: 'volume', factor: 29.5735 })
+  assert.deepEqual(classifyUnit('gramme', 'kg'), { kind: 'mass', factor: 1 })
+})
+
+test('gramsFor : once liquide convertie en millilitres puis en grammes', () => {
+  assert.deepEqual(gramsFor({ quantity: 8, unit: 'fl oz' }, 'lait', { density: 1 }), { grams: 8 * 29.5735 })
+  assert.deepEqual(readIngredient({ note: '8 fl oz de lait' }).unit, 'fl oz')
 })
 
 test('gramsFor : volume × densité et pièce × poids de la fiche', () => {

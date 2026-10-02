@@ -8,6 +8,7 @@ export function toNutritionIngredients(recipe: MealieRecipe): NutritionIngredien
     .map((ingredient) => ({
       quantity: ingredient.quantity ? String(ingredient.quantity) : "",
       unit: ingredient.unit?.name?.trim() ?? "",
+      unitAbbreviation: ingredient.unit?.abbreviation?.trim() ?? "",
       food: ingredient.food?.name?.trim() ?? "",
       note: ingredient.note?.trim() ?? "",
     }))
