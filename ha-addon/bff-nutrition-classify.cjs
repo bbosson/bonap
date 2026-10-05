@@ -2,7 +2,7 @@
 
 // Classification d'un ingrédient vers un aliment CIQUAL, puis estimation
 // nutritionnelle d'une recette à partir du dictionnaire d'aliments.
-// Voir docs/NUTRITION-CIQUAL.md (§5, §7, §8).
+// Voir docs/superpowers/specs/2026-10-05-calcul-nutrition-ciqual.md (§5, §7, §8).
 
 const { canonicalWord, detectPrecisions, normalizeFoodKey, sameSet, toPlainText } = require('./bff-nutrition-text.cjs')
 const { gramsFor, quantityKind, readIngredient } = require('./bff-nutrition-quantity.cjs')

@@ -1002,7 +1002,7 @@ app.patch('/settings', (req, res) => {
   res.json(updated)
 })
 
-// ─── Dictionnaire d'aliments (docs/NUTRITION-CIQUAL.md) ──────────────────────
+// ─── Dictionnaire d'aliments (docs/superpowers/specs/2026-10-05-calcul-nutrition-ciqual.md) ──────────────────────
 // Fichier dédié : /settings est limité à 16 Ko par clé.
 const NUTRITION_FOODS_FILE = process.env.BONAP_NUTRITION_FOODS_FILE
   || (fs.existsSync('/data') ? '/data/bonap-nutrition-foods.json' : path.join(os.tmpdir(), 'bonap-nutrition-foods.json'))
